@@ -82,6 +82,15 @@ jobs:
             - Never copy anything that looks like personal financial data
               (account numbers, real transactions, balances) into the docs.
         run: |
+          # Remove any line breaks or spaces that slipped in when pasting the token
+          CLAUDE_CODE_OAUTH_TOKEN="$(printf %s "$CLAUDE_CODE_OAUTH_TOKEN" | tr -d '[:space:]')"
+          export CLAUDE_CODE_OAUTH_TOKEN
+          if [ -z "$CLAUDE_CODE_OAUTH_TOKEN" ]; then
+            echo "::error::Secret CLAUDE_CODE_OAUTH_TOKEN is empty or missing in this repository"
+            exit 1
+          fi
+          # Safe diagnostics: length and prefix only, never the token itself
+          echo "Token length: ${#CLAUDE_CODE_OAUTH_TOKEN}, prefix: ${CLAUDE_CODE_OAUTH_TOKEN:0:13}"
           npm install -g @anthropic-ai/claude-code
           claude -p "$PROMPT" \
             --allowedTools "Read,Edit,Write,Glob,Grep" \
