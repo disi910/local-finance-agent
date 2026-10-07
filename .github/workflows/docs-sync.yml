@@ -17,7 +17,6 @@ concurrency:
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
 
 jobs:
   sync:
@@ -46,16 +45,13 @@ jobs:
             echo "has_changes=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # Runs the Claude Code CLI directly. The claude-code-action does not
+      # support push events, so it cannot be used for this trigger.
       - name: Update documentation with Claude
         if: steps.diff.outputs.has_changes == 'true'
-        uses: anthropics/claude-code-action@v1
-        with:
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          claude_args: |
-            --max-turns 20
-            --allowedTools "Read,Edit,Write,Glob,Grep"
-          prompt: |
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          PROMPT: |
             You maintain the documentation of this repository: README.md, PLAN.md
             and any Markdown files under docs/.
 
@@ -85,6 +81,11 @@ jobs:
             - If the documentation is already accurate, change nothing.
             - Never copy anything that looks like personal financial data
               (account numbers, real transactions, balances) into the docs.
+        run: |
+          npm install -g @anthropic-ai/claude-code
+          claude -p "$PROMPT" \
+            --allowedTools "Read,Edit,Write,Glob,Grep" \
+            --max-turns 20
 
       - name: Remove working files
         if: always()
