@@ -1,0 +1,18 @@
+# Personal financial data, never commit
+data/raw/*
+!data/raw/.gitkeep
+*.duckdb
+*.duckdb.wal
+.env
+# Python
+.venv/
+__pycache__/
+.pytest_cache/
+# dbt
+transform/target/
+transform/logs/
+transform/dbt_packages/
+# Node
+node_modules/
+frontend/dist/
+.DS_Store
