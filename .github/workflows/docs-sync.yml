@@ -1,0 +1,106 @@
+name: Docs sync
+
+# Runs when code changes land on main. Pushes that only touch documentation
+# are ignored, so merging the docs PR this workflow opens does not retrigger it.
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - "docs/**"
+  workflow_dispatch:
+
+concurrency:
+  group: docs-sync
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Collect changes since the previous push
+        id: diff
+        env:
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+            BEFORE="HEAD~1"
+          fi
+          mkdir -p .docs-sync
+          EXCLUDE=(':(exclude)*.md' ':(exclude)uv.lock' ':(exclude)**/package-lock.json')
+          git log --format='- %h %s' "$BEFORE"..HEAD > .docs-sync/commits.txt
+          git diff --stat "$BEFORE" HEAD -- . "${EXCLUDE[@]}" > .docs-sync/changes.diff
+          git diff "$BEFORE" HEAD -- . "${EXCLUDE[@]}" > /tmp/full.diff
+          head -c 150000 /tmp/full.diff >> .docs-sync/changes.diff
+          if [ -s /tmp/full.diff ]; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update documentation with Claude
+        if: steps.diff.outputs.has_changes == 'true'
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          claude_args: |
+            --max-turns 20
+            --allowedTools "Read,Edit,Write,Glob,Grep"
+          prompt: |
+            You maintain the documentation of this repository: README.md, PLAN.md
+            and any Markdown files under docs/.
+
+            Code changes were just pushed to main. The commit list is in
+            .docs-sync/commits.txt and the diff is in .docs-sync/changes.diff
+            (a --stat summary first, then the full diff, possibly truncated).
+
+            Your task: make the documentation accurate for the code as it is now.
+            Read the existing docs and any source files you need, then edit only
+            what the changes have made wrong, outdated or missing, for example:
+            - setup or run commands, dependencies, folder structure
+            - a new module, command or configuration a reader would need to know
+            - PLAN.md checkboxes for tasks the code clearly completes
+              (tick only what is unambiguously done; never tick partial work)
+            - new design decisions visible in the code, added to the decision log
+
+            Rules:
+            - Edit Markdown files only. Never modify code, configuration or data.
+            - README.md describes the project to an outside reader; PLAN.md tracks
+              progress. Keep that split, and keep "planned" wording for features
+              that are not implemented yet.
+            - Never invent results, metrics, benchmarks or numbers. Leave result
+              placeholders as they are unless the diff contains real results.
+            - Keep the existing structure, tone and American English spelling.
+              Make the smallest edits that fix the problem; do not rewrite or
+              reformat sections that are still correct.
+            - If the documentation is already accurate, change nothing.
+            - Never copy anything that looks like personal financial data
+              (account numbers, real transactions, balances) into the docs.
+
+      - name: Remove working files
+        if: always()
+        run: rm -rf .docs-sync
+
+      - name: Open or update the docs pull request
+        if: steps.diff.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          add-paths: |
+            *.md
+            docs/**
+          branch: docs/auto-sync
+          delete-branch: true
+          commit-message: "docs: sync documentation with recent changes"
+          title: "docs: sync documentation with recent changes"
+          body: |
+            Automated documentation update for changes pushed to `main`.
+            Review before merging; nothing here is merged automatically.
