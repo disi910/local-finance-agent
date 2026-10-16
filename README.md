@@ -16,7 +16,7 @@ Financial data is some of the most sensitive personal data there is, yet most AI
 
 ## Features (planned)
 
-- Import CSV exports from DNB, Firi and Kraken, with duplicate-safe re-imports
+- Import statements from DNB (Excel), Kraken (CSV) and Firi (planned), with duplicate-safe re-imports
 - Automatic detection of transfers between your own accounts
 - Spending categorization (rules → embeddings → LLM fallback) that learns from your corrections
 - Net worth and crypto holdings valued in NOK, with realized and unrealized gains
@@ -42,7 +42,7 @@ Financial data is some of the most sensitive personal data there is, yet most AI
 ## Architecture
 
 ```
-DNB / Firi / Kraken CSV exports
+DNB / Firi / Kraken exports
               │
       ingest (pandas)  ──►  DuckDB ledger
                                │
@@ -71,7 +71,23 @@ Python · FastAPI · Pydantic · pandas · DuckDB · dbt (dbt-duckdb) · Ollama 
 
 ## Getting started
 
-Setup instructions will be added when the first milestone is complete.
+Setup instructions will be completed with the first milestone. Ingestion currently works from the command line:
+
+```bash
+uv sync
+
+# Describe a file's format without printing its values
+uv run local-finance-agent inspect path/to/export.csv
+
+# Import into the local ledger (default: data/ledger.duckdb)
+uv run local-finance-agent import kraken path/to/ledgers.csv
+uv run local-finance-agent import dnb path/to/export.xlsx --account dnb:brukskonto
+
+# Run the tests (network access is disabled)
+uv run pytest
+```
+
+The DNB column names and date format are set as constants at the top of `src/local_finance_agent/ingest/dnb.py`; adjust them to match what `inspect` reports for your file. Re-importing a file inserts nothing new. Firi import is not implemented yet.
 
 ## Disclaimer
 

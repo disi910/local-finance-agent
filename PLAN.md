@@ -35,14 +35,14 @@
 
 ## M1 — Ingestion
 
-- [x] Export one statement from each source; document column formats in `docs/sources.md` (headers and types only, no real values)
+- [ ] Export one statement from each source; document column formats in `docs/sources.md` (headers and types only, no real values)
 - [x] Define the normalized transaction schema with Pydantic (date, amount, currency, account, source, description, source ID)
-- [x] DNB parser (Norwegian date format, comma decimals)
+- [x] DNB parser (Excel export; Norwegian date format, comma decimals)
 - [ ] Firi parser
 - [x] Kraken parser (ledger export; asset codes such as `XXBT`, `ZEUR`)
 - [x] Stable transaction IDs: use the source's own IDs where available, otherwise a hash plus an occurrence index for identical same-day transactions
 - [x] Idempotent load into a raw DuckDB table
-- [x] Synthetic fixtures for each source, with parser tests
+- [ ] Synthetic fixtures for each source, with parser tests (Kraken done; DNB and Firi missing)
 
 **Done when:** importing the same file twice gives the same row count, and all fixtures parse.
 
@@ -144,3 +144,7 @@
 | 2026-10-07 | DuckDB instead of Postgres | Single file, built for analytical queries, reads CSV directly |
 | 2026-10-07 | No agent framework | Keep the loop transparent and explainable |
 | 2026-10-07 | No investment recommendations or crypto projections | Regulated area; small model; unreliable for volatile assets |
+| 2026-10-16 | DNB parser reads Excel exports, with format settings as constants at the top of `dnb.py` | The export is an `.xlsx` file; `inspect` shows the layout without printing values |
+| 2026-10-16 | Amounts stored as `Decimal`, never float; Kraken CSV read as text | Avoid rounding noise in money values |
+| 2026-10-16 | Transaction ID is the source's own ID where one exists (Kraken), otherwise a SHA-256 hash with an occurrence number | Re-imports skip duplicates while identical same-day rows stay distinct |
+| 2026-10-16 | Source labels kept unchanged in `raw_type`; one raw DuckDB table loaded with `ON CONFLICT DO NOTHING` | Interpretation is left to dbt; idempotent imports |
