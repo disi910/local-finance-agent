@@ -26,23 +26,23 @@
 
 ## M0 — Setup
 
-- [ ] Repository, folder structure and `.gitignore`; verify `data/raw/` is ignored
-- [ ] Python environment with uv and core dependencies
-- [ ] Ollama installed; a 3–4B instruct model with tool calling pulled and responding
-- [ ] README and PLAN committed; private GitHub repository created
+- [x] Repository, folder structure and `.gitignore`; verify `data/raw/` is ignored
+- [x] Python environment with uv and core dependencies
+- [x] Ollama installed; a 3–4B instruct model with tool calling pulled and responding
+- [x] README and PLAN committed; private GitHub repository created
 
 **Done when:** a fresh clone followed by `uv sync` works, and no personal data exists in the git history.
 
 ## M1 — Ingestion
 
-- [ ] Export one statement from each source; document column formats in `docs/sources.md` (headers and types only, no real values)
-- [ ] Define the normalized transaction schema with Pydantic (date, amount, currency, account, source, description, source ID)
-- [ ] DNB parser (Norwegian date format, comma decimals)
+- [x] Export one statement from each source; document column formats in `docs/sources.md` (headers and types only, no real values)
+- [x] Define the normalized transaction schema with Pydantic (date, amount, currency, account, source, description, source ID)
+- [x] DNB parser (Norwegian date format, comma decimals)
 - [ ] Firi parser
-- [ ] Kraken parser (ledger export; asset codes such as `XXBT`, `ZEUR`)
-- [ ] Stable transaction IDs: use the source's own IDs where available, otherwise a hash plus an occurrence index for identical same-day transactions
-- [ ] Idempotent load into a raw DuckDB table
-- [ ] Synthetic fixtures for each source, with parser tests
+- [x] Kraken parser (ledger export; asset codes such as `XXBT`, `ZEUR`)
+- [x] Stable transaction IDs: use the source's own IDs where available, otherwise a hash plus an occurrence index for identical same-day transactions
+- [x] Idempotent load into a raw DuckDB table
+- [x] Synthetic fixtures for each source, with parser tests
 
 **Done when:** importing the same file twice gives the same row count, and all fixtures parse.
 
