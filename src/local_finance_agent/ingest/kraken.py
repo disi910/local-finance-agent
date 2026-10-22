@@ -62,7 +62,7 @@ def parse_kraken(path: Path) -> list[Transaction]:
                 asset=asset,
                 amount=Decimal(row["amount"]),
                 fee=Decimal(row["fee"] or "0"),
-                fee_asset=asset,
+                fee_asset=normalize_asset(row.get("feecurrency") or row["asset"]),  # newer exports name it
                 raw_type="/".join(t for t in (row["type"], row.get("subtype", "")) if t),
                 group_id=row["refid"] or None,
                 description="",

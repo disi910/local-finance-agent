@@ -43,7 +43,7 @@ def classify_cell(value) -> str:
 def print_columns(header: list[str], body: list[list], classify) -> None:
     print("Columns:")
     for i, name in enumerate(header):
-        counts = dict[str, int] = {}
+        counts: dict[str, int] = {}
         for row in body:
             kind = classify(row[i]) if i < len(row) else "missing"
             counts[kind] = counts.get(kind, 0) + 1

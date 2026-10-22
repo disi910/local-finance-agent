@@ -1,0 +1,33 @@
+name: finance
+version: "0.1.0"
+config-version: 2
+profile: finance
+
+model-paths: ["models"]
+test-paths: ["tests"]
+target-path: target
+clean-targets: [target]
+
+flags:
+  send_anonymous_usage_stats: false
+
+vars:
+  # A transfer's two legs may be booked this many days apart, in either
+  # direction: DNB often books a card charge after the exchange credits it.
+  transfer_window_days: 5
+  # Cross-currency legs match when their NOK values differ by at most this
+  # share (bank FX spread and card fees).
+  fx_tolerance_pct: 0.03
+  # Pairs outside the limits above but within these are never matched
+  # automatically; they are offered as near misses in review-transfers.
+  review_window_days: 10
+  review_fx_tolerance_pct: 0.10
+
+models:
+  finance:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
+    marts:
+      +materialized: table

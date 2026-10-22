@@ -83,11 +83,22 @@ uv run local-finance-agent inspect path/to/export.csv
 uv run local-finance-agent import kraken path/to/ledgers.csv
 uv run local-finance-agent import dnb path/to/export.xlsx --account dnb:brukskonto
 
-# Run the tests (network access is disabled)
+# Fetch daily NOK exchange rates from Norges Bank (only currency codes and dates are sent)
+uv run local-finance-agent fetch-fx
+
+# Build the dbt models and run their tests: unified transactions, transfer matching, monthly summary
+uv run local-finance-agent transform
+
+# Answer transfer pairs that could not be matched automatically, then run transform again
+uv run local-finance-agent review-transfers
+
+# Run the tests (network access is disabled, including for dbt)
 uv run pytest
 ```
 
-The DNB column names and date format are set as constants at the top of `src/local_finance_agent/ingest/dnb.py`; adjust them to match what `inspect` reports for your file. Re-importing a file inserts nothing new. Firi import is not implemented yet.
+The DNB column names and date format are set as constants at the top of `src/local_finance_agent/ingest/dnb.py`; adjust them to match what `inspect` reports for your file. Re-importing a file inserts nothing new, and importing the same file under a second account is refused. Column formats per source are in [docs/sources.md](docs/sources.md). Firi import is not implemented yet.
+
+The dbt project lives in `transform/`. Matching limits are dbt vars in `transform/dbt_project.yml`. The results are DuckDB tables in the ledger: `fct_transactions` (every leg with its kind: transfer, income, consumption, trade, reward), `transfer_matches`, `transfer_review` and `monthly_summary`. Crypto has no NOK value until crypto prices are added (M3), so crypto rewards and Kraken fees are not yet part of the monthly numbers.
 
 ## Disclaimer
 
