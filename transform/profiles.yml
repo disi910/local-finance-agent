@@ -1,0 +1,10 @@
+# No secrets: the ledger is a local file. `local-finance-agent transform`
+# sets LEDGER_DB to an absolute path; the default works when running dbt
+# from inside transform/.
+finance:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: "{{ env_var('LEDGER_DB', '../data/ledger.duckdb') }}"
+      threads: 1

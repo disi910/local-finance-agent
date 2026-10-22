@@ -1,0 +1,15 @@
+version: 2
+
+sources:
+  - name: ledger
+    description: Raw tables written by `local-finance-agent import`, `fetch-fx` and `review-transfers`.
+    schema: main
+    tables:
+      - name: raw_transactions
+        columns:
+          - name: transaction_id
+            data_tests: [unique, not_null]
+      - name: raw_fx_rates
+        description: Norges Bank daily rates, NOK per one unit of currency.
+      - name: transfer_decisions
+        description: Manual accept/reject answers for candidate transfer pairs.

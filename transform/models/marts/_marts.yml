@@ -1,0 +1,72 @@
+version: 2
+
+models:
+  - name: fct_transactions
+    columns:
+      - name: transaction_id
+        data_tests: [unique, not_null]
+      - name: account
+        data_tests: [not_null]
+      - name: booked_on
+        data_tests: [not_null]
+      - name: asset
+        data_tests: [not_null]
+      - name: amount
+        data_tests: [not_null]
+      - name: kind
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [transfer, income, consumption, trade, reward, internal, other]
+      - name: transfer_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [matched, review, unmatched]
+
+  - name: transfer_matches
+    columns:
+      - name: pair_id
+        data_tests: [unique, not_null]
+      - name: out_id
+        description: A leg is matched at most once.
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_transactions')
+                field: transaction_id
+      - name: in_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('fct_transactions')
+                field: transaction_id
+      - name: match_method
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [unique, manual]
+
+  - name: transfer_review
+    columns:
+      - name: reason
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [ambiguous, near_miss, unmatched_exchange_leg]
+      - name: anchor_side
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: [out, in]
+
+  - name: monthly_summary
+    columns:
+      - name: month
+        data_tests: [unique, not_null]

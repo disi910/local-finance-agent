@@ -6,7 +6,6 @@ from pydantic import BaseModel, Field
 
 Source = Literal["dnb", "firi", "kraken"]
 
-print(Source)
 
 class Transaction(BaseModel):
     # Same row must get the same ID on every import
@@ -35,6 +34,14 @@ class Transaction(BaseModel):
     description: str = ""
 
     model_config = {"frozen": True} # Immutable once created
+
+class FxRate(BaseModel):
+    currency: str                  # EUR, USD, ...
+    rate_date: date
+    nok_per_unit: Decimal          # NOK for 1 unit of currency, already divided by the quote's unit multiplier
+    source: str = "norges-bank"
+
+    model_config = {"frozen": True}
 
 class ImportResult(BaseModel):
     source_file: str

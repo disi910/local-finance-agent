@@ -42,3 +42,14 @@ def test_importing_twice_inserts_nothing_new(tmp_path):
 def test_wallet_becomes_a_clean_account_name():
     transactions = parse_kraken(FIXTURE)
     assert {t.account for t in transactions} == {"kraken:spot-main"}
+
+
+def test_fee_currency_column_is_used_when_present(tmp_path):
+    lines = FIXTURE.read_text().splitlines()
+    path = tmp_path / "ledgers_with_feecurrency.csv"
+    path.write_text(
+        "\n".join([lines[0] + ',"feecurrency"'] + [line + (',"ZUSD"' if "TTEST1" in line else ',""') for line in lines[1:]])
+    )
+    transactions = parse_kraken(path)
+    assert {t.fee_asset for t in transactions if t.group_id == "TTEST1-AAAAA-000001"} == {"USD"}
+    assert {t.fee_asset for t in transactions if t.group_id != "TTEST1-AAAAA-000001"} == {"EUR", "BTC"}

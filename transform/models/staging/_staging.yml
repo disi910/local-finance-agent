@@ -1,0 +1,32 @@
+version: 2
+
+models:
+  - name: stg_dnb__transactions
+    columns:
+      - name: transaction_id
+        data_tests: [unique, not_null]
+      - name: account
+        data_tests: [not_null]
+      - name: booked_on
+        data_tests: [not_null]
+      - name: amount
+        data_tests: [not_null]
+
+  - name: stg_kraken__ledgers
+    columns:
+      - name: transaction_id
+        data_tests: [unique, not_null]
+      - name: account
+        data_tests: [not_null]
+      - name: asset
+        data_tests: [not_null]
+      - name: event_type
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: [deposit, withdrawal, trade, reward, internal, other]
+
+  - name: stg_fx_rates
+    columns:
+      - name: nok_per_unit
+        data_tests: [not_null]

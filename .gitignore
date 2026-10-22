@@ -16,3 +16,4 @@ transform/dbt_packages/
 node_modules/
 frontend/dist/
 .DS_Store
+transform/.user.yml

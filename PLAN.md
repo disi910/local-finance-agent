@@ -35,30 +35,30 @@
 
 ## M1 — Ingestion
 
-- [ ] Export one statement from each source; document column formats in `docs/sources.md` (headers and types only, no real values)
+- [ ] Export one statement from each source; document column formats in `docs/sources.md` (headers and types only, no real values) (DNB and Kraken documented; Firi missing)
 - [x] Define the normalized transaction schema with Pydantic (date, amount, currency, account, source, description, source ID)
 - [x] DNB parser (Excel export; Norwegian date format, comma decimals)
 - [ ] Firi parser
 - [x] Kraken parser (ledger export; asset codes such as `XXBT`, `ZEUR`)
 - [x] Stable transaction IDs: use the source's own IDs where available, otherwise a hash plus an occurrence index for identical same-day transactions
 - [x] Idempotent load into a raw DuckDB table
-- [ ] Synthetic fixtures for each source, with parser tests (Kraken done; DNB and Firi missing)
+- [ ] Synthetic fixtures for each source, with parser tests (Kraken and DNB done; Firi missing)
 
 **Done when:** importing the same file twice gives the same row count, and all fixtures parse.
 
 ## M2 — Transformation and transfer matching (dbt)
 
-- [ ] Initialize a dbt project with dbt-duckdb in `transform/`
-- [ ] Staging model per source → one unified transactions model
-- [ ] Transfer matching: opposite amounts across my own accounts within a few days (currency-adjusted); ambiguous cases go to a review list
-- [ ] dbt tests: unique IDs, not-null fields, accepted values
-- [ ] Monthly summary models (income, consumption, transfers, savings rate)
+- [x] Initialize a dbt project with dbt-duckdb in `transform/`
+- [x] Staging model per source → one unified transactions model
+- [x] Transfer matching: opposite amounts across my own accounts within a few days (currency-adjusted); ambiguous cases go to a review list
+- [x] dbt tests: unique IDs, not-null fields, accepted values
+- [x] Monthly summary models (income, consumption, transfers, savings rate)
 
 **Done when:** one full month, checked by hand, has every transfer correctly matched.
 
 ## M3 — Valuation
 
-- [ ] Choose a public source for crypto prices and NOK exchange rates; cache everything locally
+- [ ] Choose a public source for crypto prices and NOK exchange rates; cache everything locally (NOK exchange rates done: Norges Bank; crypto prices open)
 - [ ] Daily holdings per asset and account
 - [ ] Value holdings in NOK by date; net worth over time
 - [ ] Cost basis and realized/unrealized gains (FIFO)
@@ -129,8 +129,8 @@
 
 ## Open questions
 
-- Which public source for crypto prices and NOK exchange rates?
-- Exact export formats from Firi and Kraken
+- Which public source for crypto prices? (NOK exchange rates: Norges Bank, decided 2026-10-21)
+- Exact export format from Firi (Kraken documented in `docs/sources.md`)
 - Final category taxonomy
 - Which 3–4B models to compare
 
@@ -148,3 +148,9 @@
 | 2026-10-16 | Amounts stored as `Decimal`, never float; Kraken CSV read as text | Avoid rounding noise in money values |
 | 2026-10-16 | Transaction ID is the source's own ID where one exists (Kraken), otherwise a SHA-256 hash with an occurrence number | Re-imports skip duplicates while identical same-day rows stay distinct |
 | 2026-10-16 | Source labels kept unchanged in `raw_type`; one raw DuckDB table loaded with `ON CONFLICT DO NOTHING` | Interpretation is left to dbt; idempotent imports |
+| 2026-10-21 | Importing the same file (by SHA-256) under a second account is refused | A statement imported as two accounts doubled every DNB row, and hash IDs include the account, so they could not catch it |
+| 2026-10-21 | NOK exchange rates from Norges Bank's open API, cached in `raw_fx_rates`; fiat legs valued at the latest rate on or before the booking date (at most 7 days old) | Official, free, no key; requests contain only currency codes and dates |
+| 2026-10-21 | Transfers are auto-matched only when a pair is the only strict candidate (±5 days, 3% NOK gap, exact amount for the same asset) for both legs; looser pairs (±10 days, 10%) are offered as near misses; answers are stored in the ledger's `transfer_decisions` table | Wrong matches distort income and consumption silently; transaction IDs must never enter git |
+| 2026-10-21 | Legs of ambiguous transfer pairs are left out of income and consumption until reviewed; `monthly_summary.open_review_legs` marks provisional months | A guessed classification would make the savings rate look final when it is not |
+| 2026-10-21 | Kraken wallet `unknown` is read as the spot wallet, `.HOLD` assets as their currency, and spend + receive as a trade | Seen in the real export: trade groups span both wallets, and "Buy crypto" uses spend/receive |
+| 2026-10-21 | dbt runs in-process through `dbtRunner` | The test suite's network block then covers dbt too |
